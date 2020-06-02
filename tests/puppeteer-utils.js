@@ -1,9 +1,13 @@
 const puppeteer = require('puppeteer');
 const dotenv = require('dotenv');
 
+const BASE_URL = 'https://interviews-dev.gbls.org';
+const PLAYGROUND_URL = `${BASE_URL}/playground`;
+const DEBUG = true;
+
 const login = async () => {
   const result = dotenv.config().parsed;
-  const browser = await puppeteer.launch();
+  const browser = await puppeteer.launch({headless: !DEBUG});
   const page = await browser.newPage();
   // Login
   await page.goto('https://interviews-dev.gbls.org/user/sign-in?');
@@ -89,6 +93,28 @@ const deleteProject = async (projectName) => {
   }
 }
 
+const installRepo = async (page, projectName, repoUrl, branchName) => {
+    await page.goto(`${BASE_URL}/pullplaygroundpackage?project=${projectName}&github=${repoUrl}&branch=${branchName}`);
+    const pullButton = await page.$('button[name=pull]');
+    await Promise.all([
+        pullButton.click(),
+        page.waitForNavigation(),
+    ]);
+    const installButton = await page.$('button[name=install]');
+    await Promise.all([
+        installButton.click(),
+        page.waitForNavigation(),
+    ]);
+}
+
+const workflow = async () => {
+  projectName = 'testing';
+  repoUrl = 'https://github.com/knod/docassemble-juvenilesealing';
+  branchName = 'jest-assertions';
+  let {page, browser} = await login();
+  await installRepo(page, projectName, repoUrl, branchName);
+}
+workflow();
 // createProject('testing');
 // deleteProject('testing');
 
@@ -97,3 +123,4 @@ module.exports = {
   createProject: createProject,
   deleteProject: deleteProject,
 }
+
